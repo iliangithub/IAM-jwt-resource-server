@@ -518,10 +518,39 @@ HTTP/1.1 401 Unauthorized
 ### C) Firma manipulada.
 
 ```
-H=$(echo $AT | cut -d. -f1); P=$(echo $AT | cut -d. -f2); S=$(echo $AT | cut -d. -f3)
-NEWP=$(echo $P | tr '_-' '/+' | base64 -d 2>/dev/null | sed 's/"acr":"1"/"acr":"9"/' | base64 -w0 | tr '/+' '_-' | tr -d '=')
-curl -s http://localhost:8000/yo -H "Authorization: Bearer $H.$NEWP.$S" | jq
+FAKE=$(python3 - "$AT" <<'EOF'
+import sys, base64, json
+h, p, s = sys.argv[1].split('.')
+dec = lambda x: json.loads(base64.urlsafe_b64decode(x + '=' * (-len(x) % 4)))
+enc = lambda d: base64.urlsafe_b64encode(json.dumps(d, separators=(',', ':')).encode()).rstrip(b'=').decode()
+datos = dec(p)
+datos['preferred_username'] = 'atacante'
+print(f"{h}.{enc(datos)}.{s}")
+EOF
+)
 ```
+
+Comprobamos que la manipulación surtió efecto antes de lanzar nada:
+
+```
+echo $FAKE | cut -d. -f2 | base64 -d 2>/dev/null | jq .preferred_username
+```
+
+Tiene que decir "atacante". Y ahora sí:
+
+```
+curl -s http://localhost:8000/yo -H "Authorization: Bearer $FAKE" | jq
+```
+Este es el resultado correcto:
+
+<pre>
+{
+  "detail": "La firma del token no es valida"
+}
+</pre>
+
+Si nos da esto, mal:
+
 <pre>
 {
   "sub": "920ba24c-b418-4c90-99af-48c49078b7a1",
@@ -546,6 +575,16 @@ curl -s http://localhost:8000/yo -H "Authorization: Bearer $H.$NEWP.$S" | jq
 curl -s http://localhost:8000/yo -H "Authorization: Bearer $AT" | jq
 ```
 
+Este es el error que nos tiene que salir:
+
+<pre>
+{
+  "detail": "El token ha caducado"
+}
+</pre>
+
+Si nos sale esto:
+
 <pre>
 {
   "sub": "920ba24c-b418-4c90-99af-48c49078b7a1",
@@ -563,6 +602,8 @@ curl -s http://localhost:8000/yo -H "Authorization: Bearer $AT" | jq
   "caduca": 1790868192
 }
 </pre>
+
+Es porque no ha caducado.
 
 ### E) Un token perfectamente válido, emitido por el mismo Keycloak y firmado con la misma clave, pero que no va dirigido a tu API:
 
