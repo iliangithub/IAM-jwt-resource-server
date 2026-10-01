@@ -174,3 +174,45 @@ El scope termina en iam-api, y eso confirma otra cosa distinta. Dice que el ámb
 Y en realm_access.roles aparece auditor, que es la asignación que le hice al usuario. Ese rol todavía no sirve para nada, pero es lo que me va a permitir provocar un 403 más adelante, con un token perfectamente válido al que la API le deniega el acceso por no tener el permiso necesario.
 
 Con esas tres confirmaciones, Keycloak queda listo y ya no vuelvo a tocarlo.
+
+## 3.3 La API sin seguridad.
+
+En ~/iam-api, con el entorno virtual activado, crea main.py con esto.
+
+```
+sudo nano main.py
+```
+
+```
+from fastapi import FastAPI
+
+app = FastAPI(title="IAM resource server", version="0.1.0")
+
+
+@app.get("/publico")
+def publico():
+    return {"mensaje": "Este endpoint no exige token"}
+```
+
+<img width="747" height="262" alt="imagen" src="https://github.com/user-attachments/assets/6e341d37-6c43-4e5f-8992-88b63e9aa4f7" />
+
+Arrancamos el servidor:
+
+```
+uvicorn main:app --reload --port 8000
+```
+
+main:app le dice a uvicorn que busque el objeto app dentro del fichero main.py. El --reload hace que se reinicie sola cada vez que guardes cambios, cómodo mientras desarrollas y desaconsejado en producción. Y el puerto 8000 es para no chocar con el 8080 de Keycloak.
+
+Uvicorn se queda ocupando esa terminal, así que abrimos otra para probar:
+
+```
+curl -s http://localhost:8000/publico | jq
+```
+
+<img width="802" height="547" alt="imagen" src="https://github.com/user-attachments/assets/fd063558-3dc1-496e-85e8-4e97f7607e97" />
+
+Entra también a http://localhost:8000/docs desde el navegador. FastAPI genera esa documentación leyendo tu propio código, sin que escribas nada aparte. Es el contrato de la API publicándose solo, y encaja con la definición de API que diste en la práctica anterior.
+
+<img width="967" height="357" alt="imagen" src="https://github.com/user-attachments/assets/6bb53732-7884-42ef-9960-35e2f1de05ce" />
+
