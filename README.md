@@ -1,6 +1,13 @@
 # 1.0 Objetivo.
 
-El enunciado de esta breve práctica consiste en:
+En esta práctica creamos una API propia que no sabe nada de usuarios ni de contraseñas y que decide quién entra basándose solo en el token que recibe.
+
+El objetivo es:
+- Escribir yo el código que valida un JWT, en lugar de dejarlo en manos de Keycloak.
+- Ver cómo se verifica una firma contra las claves públicas del emisor, sin compartir ningún secreto.
+- Entender para qué sirve la audiencia, porque es el campo que hace que un token válido pueda no servir en mi API.
+- Separar en código la autenticación de la autorización, y provocar un 401 y un 403 con el mismo usuario.
+- Romperlo a propósito de seis formas distintas y apuntar lo que responde la API en cada caso.
 
 
 # 2.0 Antes de empezar.
