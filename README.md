@@ -59,22 +59,27 @@ pip install fastapi uvicorn "pyjwt[crypto]" requests
 
 ## 3.2 Preparar KeyCloak.
 
-Realm lab-iam, comprueba el selector de arriba a la izquierda antes de nada.
+Lo primero estar en el realm `lab-iam`.
 
-<h3>a) Crear el ámbito de cliente</h3>
+<img width="320" height="126" alt="Captura de pantalla 2026-09-29 131212" src="https://github.com/user-attachments/assets/494b2448-f189-4b69-b6a1-83e94322d009" />
+
+### a) Crear el ámbito de cliente
+
+<img width="648" height="220" alt="Captura de pantalla 2026-09-29 131431" src="https://github.com/user-attachments/assets/603399cd-57ed-4729-9330-8c48c95359e3" />
+
+Nos vamos a client scopes.
 
 Client scopes, Create client scope.
+- Name: iam-api
+- Description: Audiencia de la API de recursos
+- Type: Default
+- Protocol: OpenID Connect
+- Display on consent screen: Off
+- Include in token scope: On
 
-Name: iam-api
-Description: Audiencia de la API de recursos
-Type: Default
-Protocol: OpenID Connect
-Display on consent screen: Off
-Include in token scope: On
+<img width="948" height="756" alt="Captura de pantalla 2026-09-29 131558" src="https://github.com/user-attachments/assets/7c682aee-c7aa-4b5d-b288-821269470ce5" />
 
-Save.
-
-b) Crear el mapeador dentro del ámbito
+### b) Crear el mapeador dentro del ámbito
 
 Ya dentro de iam-api, pestaña Mappers, botón Configure a new mapper, tipo Audience.
 
@@ -89,7 +94,7 @@ Save.
 
 Los dos campos de audiencia se excluyen. El primero es un desplegable con los clientes del realm y el segundo es texto libre, que es el que necesitas, porque tu API no está registrada como cliente: no pide tokens, solo los recibe.
 
-c) Asignar el ámbito al cliente
+### c) Asignar el ámbito al cliente
 
 Clients, spa-web, pestaña Client scopes, botón Add client scope, marcas iam-api y lo añades como Default.
 
