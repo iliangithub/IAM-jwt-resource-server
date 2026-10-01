@@ -449,7 +449,7 @@ Fíjate en el orden dentro del endpoint, porque ahí está toda la teoría del a
 Escuchamos:
 
 ```
-uvicorn main:app --reload --port 800
+uvicorn main:app --reload --port 8000
 ```
 
 Generamos otro token, lo almacenamos:
