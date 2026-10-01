@@ -96,18 +96,51 @@ Le damos al botón `Configure a new mapper`.
 - Add to lightweight access token: `Off`.
 - Add to token introspection: `On`.
 
+<img width="826" height="738" alt="Captura de pantalla 2026-09-29 135555" src="https://github.com/user-attachments/assets/b85ecc61-1668-4eed-b004-7c53867ee9a2" />
+
 Los dos campos de audiencia se excluyen. El primero es un desplegable con los clientes del realm y el segundo es texto libre, que es el que necesitas, porque tu API no está registrada como cliente: no pide tokens, solo los recibe.
 
 ### c) Asignar el ámbito al cliente
 
-Clients, spa-web, pestaña Client scopes, botón Add client scope, marcas iam-api y lo añades como Default.
+<img width="767" height="432" alt="Captura de pantalla 2026-09-29 135734" src="https://github.com/user-attachments/assets/48b60759-adb1-41d8-8c53-ac3529f63096" />
+
+Clients → spa-web → pestaña Client scopes → botón Add client scope
+
+<img width="835" height="475" alt="Captura de pantalla 2026-09-29 135808" src="https://github.com/user-attachments/assets/16ad5fe8-0011-4d28-817d-eebb06f66a5b" />
+
+Marcamos `iam-api` y lo añades como `Default`.
+
+<img width="566" height="82" alt="imagen" src="https://github.com/user-attachments/assets/4ef31308-b81c-41e7-a870-1c686a7de1b6" />
 
 Este paso es imprescindible y no es el mismo que el Type Default del punto a). Aquel solo dice qué ámbitos reciben los clientes nuevos, y spa-web ya existía.
 
-d) Crear el rol
+### d) Crear el rol
 
-Realm roles, Create role, nombre auditor.
+Realm roles → Create role.
 
-e) Asignar el rol al usuario
+<img width="702" height="285" alt="imagen" src="https://github.com/user-attachments/assets/1cf837c4-c962-46ce-b863-dbcacddd64de" />
 
-Users, cesar23, pestaña Role mapping, Assign role. Cambia el filtro a Realm roles para que aparezca auditor, márcalo y asigna.
+nombre auditor, descripción la que sea:
+
+<img width="736" height="377" alt="imagen" src="https://github.com/user-attachments/assets/245ffcca-8398-42c2-a0ac-82f4d704a5b5" />
+
+### e) Asignar el rol al usuario
+
+Users → cesar23
+
+<img width="667" height="386" alt="imagen" src="https://github.com/user-attachments/assets/7447ed3e-c8ef-4ee0-a626-4e75c0eb2192" />
+
+Pestaña Role mapping → Assign role. 
+
+<img width="922" height="366" alt="imagen" src="https://github.com/user-attachments/assets/cf48b43d-17a9-4166-88d2-e0b7ac10e908" />
+
+Cambia el filtro a Realm roles para que aparezca auditor, 
+
+<img width="266" height="137" alt="imagen" src="https://github.com/user-attachments/assets/65248e50-0443-41d3-b52c-cc5d04a3b2c1" />
+
+márcalo y asigna.
+
+<img width="567" height="510" alt="imagen" src="https://github.com/user-attachments/assets/80669671-dd07-4903-b9ae-83c9521c7b6a" />
+
+<img width="712" height="381" alt="imagen" src="https://github.com/user-attachments/assets/7e26a349-a0d6-4e0f-899d-01b424dc860a" />
+
