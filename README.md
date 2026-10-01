@@ -70,27 +70,31 @@ Lo primero estar en el realm `lab-iam`.
 Nos vamos a client scopes.
 
 Client scopes, Create client scope.
-- Name: iam-api
-- Description: Audiencia de la API de recursos
-- Type: Default
-- Protocol: OpenID Connect
-- Display on consent screen: Off
-- Include in token scope: On
+- Name: `iam-api`
+- Description: `Audiencia de la API de recursos`
+- Type: `Default`
+- Protocol: `OpenID Connect`
+- Display on consent screen: `Off`
+- Include in token scope: `On`
+- Include in OpenID Provider Metadata: `On`
 
 <img width="948" height="756" alt="Captura de pantalla 2026-09-29 131558" src="https://github.com/user-attachments/assets/7c682aee-c7aa-4b5d-b288-821269470ce5" />
 
 ### b) Crear el mapeador dentro del ámbito
 
-Ya dentro de iam-api, pestaña Mappers, botón Configure a new mapper, tipo Audience.
+Ya dentro de iam-api, pestaña Mappers, tipo Audience.
 
-Name: audience-iam-api
-Included Client Audience: vacío
-Included Custom Audience: iam-api
-Add to ID token: Off
-Add to access token: On
-Add to token introspection: On
+<img width="1372" height="657" alt="Captura de pantalla 2026-09-29 135110" src="https://github.com/user-attachments/assets/987856c2-91c8-4675-b96e-273181f58507" />
 
-Save.
+Le damos al botón `Configure a new mapper`.
+
+- Name: `audience-iam-api`.
+- Included Client Audience: `vacío`.
+- Included Custom Audience: `iam-api`.
+- Add to ID token: `Off`.
+- Add to access token: `On`.
+- Add to lightweight access token: `Off`.
+- Add to token introspection: `On`.
 
 Los dos campos de audiencia se excluyen. El primero es un desplegable con los clientes del realm y el segundo es texto libre, que es el que necesitas, porque tu API no está registrada como cliente: no pide tokens, solo los recibe.
 
