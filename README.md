@@ -491,21 +491,75 @@ Y funciona. Debe devolver 200. Mismo token, mismo servidor, dos endpoints y dos 
 
 ## 3.6 El resto de los fallos
 
+> [!NOTE]
+> Si te caduca el token, simplemente genera uno nuevo para probar estas cosas.
+> 
+
 Para este último apartado, vamos a provocar situaciones/errores:
 
+### A) Sin cabecera.
+
 ```
-# 1. Sin cabecera
 curl -i -s http://localhost:8000/yo | head -1
+```
+<pre>
+HTTP/1.1 401 Unauthorized
+</pre>
 
-# 2. Cabecera mal formada
+### B) Cabecera mal formada.
+
+```
 curl -i -s http://localhost:8000/yo -H "Authorization: $AT" | head -1
+```
+<pre>
+HTTP/1.1 401 Unauthorized
+</pre>
 
-# 3. Firma manipulada
+### C) Firma manipulada.
+
+```
 H=$(echo $AT | cut -d. -f1); P=$(echo $AT | cut -d. -f2); S=$(echo $AT | cut -d. -f3)
 NEWP=$(echo $P | tr '_-' '/+' | base64 -d 2>/dev/null | sed 's/"acr":"1"/"acr":"9"/' | base64 -w0 | tr '/+' '_-' | tr -d '=')
 curl -s http://localhost:8000/yo -H "Authorization: Bearer $H.$NEWP.$S" | jq
+```
+<pre>
+{
+  "sub": "920ba24c-b418-4c90-99af-48c49078b7a1",
+  "usuario": "cesar23",
+  "emisor": "http://localhost:8080/realms/lab-iam",
+  "audiencia": [
+    "iam-api",
+    "account"
+  ],
+  "roles": [
+    "offline_access",
+    "default-roles-lab-iam",
+    "uma_authorization"
+  ],
+  "caduca": 1790868192
+}
+</pre>
 
-# 4. Token caducado: espera a que pase el minuto y repite
+### D) Token caducado: espera a que pase el minuto y repite.
+
+```
 curl -s http://localhost:8000/yo -H "Authorization: Bearer $AT" | jq
 ```
 
+<pre>
+{
+  "sub": "920ba24c-b418-4c90-99af-48c49078b7a1",
+  "usuario": "cesar23",
+  "emisor": "http://localhost:8080/realms/lab-iam",
+  "audiencia": [
+    "iam-api",
+    "account"
+  ],
+  "roles": [
+    "offline_access",
+    "default-roles-lab-iam",
+    "uma_authorization"
+  ],
+  "caduca": 1790868192
+}
+</pre>
