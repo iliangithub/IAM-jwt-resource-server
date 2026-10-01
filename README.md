@@ -473,7 +473,9 @@ Seleccionamos `auditor` y pulsas `Unassign`.
 
 Ya no lo es:
 
-
+<img width="940" height="481" alt="Captura de pantalla 2026-10-01 170623" src="https://github.com/user-attachments/assets/b07228b0-e5a3-46f0-8cb0-7349aef127a6" />
 
 De nuevo, el token si o si, tiene que estar caducado entonces generamos uno.
+
+<img width="807" height="496" alt="imagen" src="https://github.com/user-attachments/assets/e6042cb2-9cef-4b33-bdd2-b836ae218ea7" />
 
