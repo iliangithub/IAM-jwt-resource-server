@@ -216,3 +216,264 @@ Entra también a http://localhost:8000/docs desde el navegador. FastAPI genera e
 
 <img width="967" height="357" alt="imagen" src="https://github.com/user-attachments/assets/6bb53732-7884-42ef-9960-35e2f1de05ce" />
 
+Si vemos los logs del uvicorn:
+
+<img width="822" height="482" alt="imagen" src="https://github.com/user-attachments/assets/151b0a1d-9832-4941-9b23-ace4e243fb45" />
+
+- Vemos que he intentado de manera errónea buscar una página que no existe, "documentation" y por eso aparecen errores 404.
+
+## 3.4 Validar el Token.
+
+Ahora vamos a reemplazar el contenido completo del "main.py".
+
+Lo primero cancelamos la escucha del uvicorn. (CTRL + C).
+
+```
+truncate -s 0 main.py
+```
+
+```
+sudo nano main.py
+```
+
+```
+from fastapi import FastAPI, Header, HTTPException
+import jwt
+from jwt import PyJWKClient
+
+KEYCLOAK_URL = "http://localhost:8080"
+REALM = "lab-iam"
+ISSUER = f"{KEYCLOAK_URL}/realms/{REALM}"
+JWKS_URL = f"{ISSUER}/protocol/openid-connect/certs"
+AUDIENCIA = "iam-api"
+
+app = FastAPI(title="IAM resource server", version="0.2.0")
+
+jwks_client = PyJWKClient(JWKS_URL)
+
+
+def validar_token(authorization):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Falta la cabecera Authorization")
+
+    partes = authorization.split()
+    if len(partes) != 2 or partes[0].lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Formato esperado: Bearer <token>")
+
+    token = partes[1]
+
+    try:
+        clave = jwks_client.get_signing_key_from_jwt(token)
+        datos = jwt.decode(
+            token,
+            clave.key,
+            algorithms=["RS256"],
+            audience=AUDIENCIA,
+            issuer=ISSUER,
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="El token ha caducado")
+    except jwt.InvalidAudienceError:
+        raise HTTPException(status_code=401, detail=f"El token no va dirigido a {AUDIENCIA}")
+    except jwt.InvalidIssuerError:
+        raise HTTPException(status_code=401, detail="El emisor del token no es el esperado")
+    except jwt.InvalidSignatureError:
+        raise HTTPException(status_code=401, detail="La firma del token no es valida")
+    except jwt.PyJWTError as e:
+        raise HTTPException(status_code=401, detail=f"Token invalido ({type(e).__name__})")
+
+    return datos
+
+
+@app.get("/publico")
+def publico():
+    return {"mensaje": "Este endpoint no exige token"}
+
+
+@app.get("/yo")
+def yo(authorization: str = Header(default=None)):
+    datos = validar_token(authorization)
+    return {
+        "sub": datos.get("sub"),
+        "usuario": datos.get("preferred_username"),
+        "emisor": datos.get("iss"),
+        "audiencia": datos.get("aud"),
+        "roles": datos.get("realm_access", {}).get("roles", []),
+        "caduca": datos.get("exp"),
+    }
+```
+
+Qué hace cada pieza
+
+PyJWKClient(JWKS_URL) se crea una sola vez al arrancar. Descarga las claves públicas del realm y las cachea en memoria, y no consulta nada hasta que llega el primer token.
+
+get_signing_key_from_jwt(token) lee el kid de la cabecera del token y busca la clave que le corresponde. Si no la tiene cacheada, vuelve a consultar el JWKS. Ese mecanismo es lo que hace que una rotación de claves en Keycloak no rompa la API.
+
+jwt.decode es donde ocurre la validación de verdad, y hace cuatro comprobaciones de una vez. Verifica la firma con la clave que recibe, comprueba que aud incluya iam-api, comprueba que iss sea exactamente el esperado y comprueba que no haya caducado. Cada fallo lanza una excepción distinta, y por eso las capturo por separado.
+
+El parámetro algorithms=["RS256"] no es opcional ni decorativo. Sin esa lista explícita, alguien podría presentar un token cuya cabecera diga que va firmado con none o con un algoritmo simétrico, y engañar a la librería para que lo acepte. Es una familia de ataques conocida contra implementaciones de JWT, y la defensa consiste en que sea la aplicación la que imponga qué algoritmos admite, en lugar de fiarse de lo que diga el propio token.
+
+Volvemos a generar un token nuevo:
+
+<img width="1185" height="707" alt="imagen" src="https://github.com/user-attachments/assets/f5890bb8-1d96-40d6-a7e0-7caad72375c6" />
+
+Escuchamos:
+
+```
+uvicorn main:app --reload --port 8000
+```
+
+Ponemos el token nuevo:
+
+```
+AT='PEGA_UN_TOKEN_NUEVO'
+curl -s http://localhost:8000/yo -H "Authorization: Bearer $AT" | jq
+```
+
+<img width="797" height="556" alt="imagen" src="https://github.com/user-attachments/assets/b79be279-e275-4509-9890-454f193ba4da" />
+
+Como vemos funciona. Si esperamos el suficiente tiempo, dice y nos responde con que el Token caduca:
+
+<img width="807" height="136" alt="imagen" src="https://github.com/user-attachments/assets/24f3b945-e6b2-4391-b536-a914b46fc15e" />
+
+# 3.5: autorizar por rol.
+
+De nuevo, si revisamos los logs:
+
+<img width="792" height="352" alt="imagen" src="https://github.com/user-attachments/assets/86b3d415-b0bc-47fd-aa27-cb67bc3c6a01" />
+
+Estos dos intentos y 401, son de que el token caducó.
+
+Dejamos de escuchar y volvemos a cambiar el "main.py".
+
+```
+truncate -s 0 main.py
+```
+
+```
+nano main.py
+```
+
+```
+from fastapi import FastAPI, Header, HTTPException
+import jwt
+from jwt import PyJWKClient
+
+KEYCLOAK_URL = "http://localhost:8080"
+REALM = "lab-iam"
+ISSUER = f"{KEYCLOAK_URL}/realms/{REALM}"
+JWKS_URL = f"{ISSUER}/protocol/openid-connect/certs"
+AUDIENCIA = "iam-api"
+
+app = FastAPI(title="IAM resource server", version="0.3.0")
+
+jwks_client = PyJWKClient(JWKS_URL)
+
+
+def validar_token(authorization):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Falta la cabecera Authorization")
+
+    partes = authorization.split()
+    if len(partes) != 2 or partes[0].lower() != "bearer":
+        raise HTTPException(status_code=401, detail="Formato esperado: Bearer <token>")
+
+    token = partes[1]
+
+    try:
+        clave = jwks_client.get_signing_key_from_jwt(token)
+        datos = jwt.decode(
+            token,
+            clave.key,
+            algorithms=["RS256"],
+            audience=AUDIENCIA,
+            issuer=ISSUER,
+        )
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="El token ha caducado")
+    except jwt.InvalidAudienceError:
+        raise HTTPException(status_code=401, detail=f"El token no va dirigido a {AUDIENCIA}")
+    except jwt.InvalidIssuerError:
+        raise HTTPException(status_code=401, detail="El emisor del token no es el esperado")
+    except jwt.InvalidSignatureError:
+        raise HTTPException(status_code=401, detail="La firma del token no es valida")
+    except jwt.PyJWTError as e:
+        raise HTTPException(status_code=401, detail=f"Token invalido ({type(e).__name__})")
+
+    return datos
+
+
+def exigir_rol(datos, rol):
+    roles = datos.get("realm_access", {}).get("roles", [])
+    if rol not in roles:
+        raise HTTPException(status_code=403, detail=f"Hace falta el rol '{rol}'")
+
+
+@app.get("/publico")
+def publico():
+    return {"mensaje": "Este endpoint no exige token"}
+
+
+@app.get("/yo")
+def yo(authorization: str = Header(default=None)):
+    datos = validar_token(authorization)
+    return {
+        "sub": datos.get("sub"),
+        "usuario": datos.get("preferred_username"),
+        "emisor": datos.get("iss"),
+        "audiencia": datos.get("aud"),
+        "roles": datos.get("realm_access", {}).get("roles", []),
+        "caduca": datos.get("exp"),
+    }
+
+
+@app.get("/informes")
+def informes(authorization: str = Header(default=None)):
+    datos = validar_token(authorization)
+    exigir_rol(datos, "auditor")
+    return {
+        "informes": ["cierre-mensual", "accesos-privilegiados"],
+        "solicitado_por": datos.get("preferred_username"),
+    }
+```
+
+Fíjate en el orden dentro del endpoint, porque ahí está toda la teoría del apartado de autenticación y autorización hecha código. Primero validar_token, que establece quién eres y devuelve 401 si no puede. Después exigir_rol, que decide qué puedes hacer y devuelve 403 si no te corresponde. Son dos pasos separados y en ese orden, nunca al revés.
+
+Escuchamos:
+
+```
+uvicorn main:app --reload --port 800
+```
+
+Generamos otro token, lo almacenamos:
+
+```
+AT='AQUI EL ACCESS TOKEN'
+```
+
+Probamos con el rol puesto.
+
+```
+curl -s http://localhost:8000/informes -H "Authorization: Bearer $AT" | jq
+```
+
+Probamos con el rol puesto.
+
+<img width="805" height="757" alt="imagen" src="https://github.com/user-attachments/assets/94b8be16-2618-46b8-8615-f5ee5bc1b242" />
+
+Debería darte los informes. Si tardamos mucho, caduca y toca hacer el token de nuevo.
+
+Y ahora nos quitamos el rol: 
+
+Keycloak → Users → cesar23 → pestaña Role mapping
+
+<img width="806" height="217" alt="imagen" src="https://github.com/user-attachments/assets/ae34b993-1ac5-4258-9b12-67280ff4632b" />
+
+Seleccionamos `auditor` y pulsas `Unassign`.
+
+Ya no lo es:
+
+
+
+De nuevo, el token si o si, tiene que estar caducado entonces generamos uno.
+
