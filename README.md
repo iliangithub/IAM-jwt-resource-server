@@ -134,13 +134,43 @@ Pestaña Role mapping → Assign role.
 
 <img width="922" height="366" alt="imagen" src="https://github.com/user-attachments/assets/cf48b43d-17a9-4166-88d2-e0b7ac10e908" />
 
-Cambia el filtro a Realm roles para que aparezca auditor, 
+Cambiamos el filtro a `Realm roles` para que aparezca auditor.
 
 <img width="266" height="137" alt="imagen" src="https://github.com/user-attachments/assets/65248e50-0443-41d3-b52c-cc5d04a3b2c1" />
 
-márcalo y asigna.
+Marcamos y asignamos.
 
 <img width="567" height="510" alt="imagen" src="https://github.com/user-attachments/assets/80669671-dd07-4903-b9ae-83c9521c7b6a" />
 
 <img width="712" height="381" alt="imagen" src="https://github.com/user-attachments/assets/7e26a349-a0d6-4e0f-899d-01b424dc860a" />
 
+
+### f) Comprobación antes de crear la API.
+
+Pedimos un token nuevo en Postman y lo ponemos en el comando:
+
+<img width="1477" height="777" alt="imagen" src="https://github.com/user-attachments/assets/23a74809-fe61-4b1e-a5ce-dae4094c4123" />
+
+<img width="996" height="560" alt="imagen" src="https://github.com/user-attachments/assets/8436b046-f397-4164-8504-6cd773cdfe55" />
+
+y lo ponemos en el comando:
+
+```
+AT='PEGA_EL_ACCESS_TOKEN'
+```
+
+Ahora decodificamos el token:
+
+```
+echo $AT | cut -d. -f2 | base64 -d 2>/dev/null | jq '{aud, scope, roles: .realm_access.roles}'
+```
+
+Las tres cosas que miro son estas.
+
+El aud incluye iam-api, que es lo que confirma que el mapeador de audiencia está haciendo su trabajo. La API va a exigir ese valor, así que sin él rechazaría el token por mucho que lo demás estuviera bien.
+
+El scope termina en iam-api, y eso confirma otra cosa distinta. Dice que el ámbito se le está aplicando al cliente spa-web. Van juntos pero no son lo mismo, y conviene no confundirlos: el scope demuestra que el ámbito llegó, y el aud demuestra que el mapeador que vive dentro de ese ámbito se ejecutó. Si viera iam-api en el scope pero no en el aud, sabría que el ámbito está bien asignado y lo que falta es el mapeador.
+
+Y en realm_access.roles aparece auditor, que es la asignación que le hice al usuario. Ese rol todavía no sirve para nada, pero es lo que me va a permitir provocar un 403 más adelante, con un token perfectamente válido al que la API le deniega el acceso por no tener el permiso necesario.
+
+Con esas tres confirmaciones, Keycloak queda listo y ya no vuelvo a tocarlo.
