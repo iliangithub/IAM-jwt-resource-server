@@ -336,7 +336,7 @@ Como vemos funciona. Si esperamos el suficiente tiempo, dice y nos responde con 
 
 <img width="807" height="136" alt="imagen" src="https://github.com/user-attachments/assets/24f3b945-e6b2-4391-b536-a914b46fc15e" />
 
-# 3.5: autorizar por rol.
+## 3.5: autorizar por rol.
 
 De nuevo, si revisamos los logs:
 
@@ -478,4 +478,7 @@ Ya no lo es:
 De nuevo, el token si o si, tiene que estar caducado entonces generamos uno.
 
 <img width="807" height="496" alt="imagen" src="https://github.com/user-attachments/assets/e6042cb2-9cef-4b33-bdd2-b836ae218ea7" />
+
+Sin embargo, vamos a ver para lo que sí estamos autorizados, para ello rápidamente ejcutamos:
+
 
