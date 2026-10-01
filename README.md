@@ -61,7 +61,7 @@ pip install fastapi uvicorn "pyjwt[crypto]" requests
 
 Realm lab-iam, comprueba el selector de arriba a la izquierda antes de nada.
 
-<b>a) Crear el ámbito de cliente</b>
+<h3>a) Crear el ámbito de cliente</h3>
 
 Client scopes, Create client scope.
 
