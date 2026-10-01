@@ -336,7 +336,7 @@ Como vemos funciona. Si esperamos el suficiente tiempo, dice y nos responde con 
 
 <img width="807" height="136" alt="imagen" src="https://github.com/user-attachments/assets/24f3b945-e6b2-4391-b536-a914b46fc15e" />
 
-## 3.5: autorizar por rol.
+## 3.5 Autorizar por rol.
 
 De nuevo, si revisamos los logs:
 
@@ -479,6 +479,33 @@ De nuevo, el token si o si, tiene que estar caducado entonces generamos uno.
 
 <img width="807" height="496" alt="imagen" src="https://github.com/user-attachments/assets/e6042cb2-9cef-4b33-bdd2-b836ae218ea7" />
 
-Sin embargo, vamos a ver para lo que sí estamos autorizados, para ello rápidamente ejcutamos:
+Sin embargo, vamos a ver para lo que sí estamos autorizados, para ello rápidamente ejecutamos:
 
+```
+curl -s http://localhost:8000/yo -H "Authorization: Bearer $AT" | jq
+```
+
+<img width="800" height="587" alt="imagen" src="https://github.com/user-attachments/assets/1e500fa2-a247-4832-8220-2a5c4b6e917a" />
+
+Y funciona. Debe devolver 200. Mismo token, mismo servidor, dos endpoints y dos respuestas distintas. Eso es autorización.
+
+## 3.6 El resto de los fallos
+
+Para este último apartado, vamos a provocar situaciones/errores:
+
+```
+# 1. Sin cabecera
+curl -i -s http://localhost:8000/yo | head -1
+
+# 2. Cabecera mal formada
+curl -i -s http://localhost:8000/yo -H "Authorization: $AT" | head -1
+
+# 3. Firma manipulada
+H=$(echo $AT | cut -d. -f1); P=$(echo $AT | cut -d. -f2); S=$(echo $AT | cut -d. -f3)
+NEWP=$(echo $P | tr '_-' '/+' | base64 -d 2>/dev/null | sed 's/"acr":"1"/"acr":"9"/' | base64 -w0 | tr '/+' '_-' | tr -d '=')
+curl -s http://localhost:8000/yo -H "Authorization: Bearer $H.$NEWP.$S" | jq
+
+# 4. Token caducado: espera a que pase el minuto y repite
+curl -s http://localhost:8000/yo -H "Authorization: Bearer $AT" | jq
+```
 
