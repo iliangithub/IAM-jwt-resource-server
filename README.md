@@ -563,3 +563,28 @@ curl -s http://localhost:8000/yo -H "Authorization: Bearer $AT" | jq
   "caduca": 1790868192
 }
 </pre>
+
+### E) Un token perfectamente válido, emitido por el mismo Keycloak y firmado con la misma clave, pero que no va dirigido a tu API:
+
+Para este apartado necesitamos el secreto de `api-backend`.
+
+<img width="990" height="621" alt="imagen" src="https://github.com/user-attachments/assets/1ecfdf85-59fb-4522-a3af-d4be74187cdd" />
+
+El secreto lo sacas de Clients, api-backend, pestaña Credentials. Ese token llevará aud: account y, si le pusiste el mapeador de la práctica anterior, también api-backend, pero nunca iam-api. Tu API lo rechaza por audiencia.
+
+```
+SECRET='EL_SECRETO_DE_API_BACKEND'
+AT3=$(curl -s -X POST http://localhost:8080/realms/lab-iam/protocol/openid-connect/token \
+  -d grant_type=client_credentials -d client_id=api-backend \
+  -d client_secret=$SECRET | jq -r .access_token)
+
+curl -s http://localhost:8000/yo -H "Authorization: Bearer $AT3" | jq
+```
+
+<pre>
+{
+  "detail": "El token no va dirigido a iam-api"
+}
+</pre>
+
+Es el experimento que mejor explica para qué sirve ese campo: sin la comprobación de audiencia, cualquier servicio que reciba un token tuyo podría darse la vuelta y usarlo contra otra API del mismo realm haciéndose pasar por ti.
